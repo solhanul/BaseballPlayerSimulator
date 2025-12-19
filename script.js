@@ -29,38 +29,42 @@ function createCharacter({ name, career, position, personality, married }) {
 
 /* 태그 생성 */
 
-const CAREER_OPTIONS = [
-  "신인",
-  "중참",
-  "중고참",
-  "베테랑"
-]
+const CAREER_OPTIONS = {
+  rookie: "신인",
+  midLevel: "중참",
+  experienced: "중고참",
+  veteran: "베테랑"
+}
 
-const POSITION_OPTIONS = [
-  "투수",
-  "포수",
-  "내야수",
-  "외야수"
-];
+const POSITION_OPTIONS = {
+  pitcher: "투수",
+  catcher: "포수",
+  infielder: "내야수",
+  outfielder: "외야수"
+};
 
-const PERSONALITY_OPTIONS = [
-  "차분함",
-  "리더형",
-  "의존적",
-  "공격적",
-  "냉소적",
-  "헌신적"
-];
+const PERSONALITY_OPTIONS = {
+  calm: "차분함",
+  leader: "리더형",
+  dependent: "의존적",
+  social: "사교적",
+  sensitive: "신경적",
+  kind: "다정함"
+};
 
+const SOCIAL_EVENTS ={
+  
+}
 
 /* 캐릭터 설정 */
 
 const careerContainer = document.getElementById("career-tags");
 
-  CAREER_OPTIONS.forEach(tag => {
+Object.entries(CAREER_OPTIONS).forEach(([key, label]) => {
   const btn = document.createElement("button");
   btn.className = "tag-btn";
-  btn.textContent = tag;
+  btn.textContent = label;
+  btn.dataset.key = key;
   btn.onclick = () => {
     careerContainer.querySelectorAll(".tag-btn")
       .forEach(b => b.classList.remove("selected"));
@@ -77,10 +81,11 @@ function getSelectedCareer() {
 
 const positionContainer = document.getElementById("position-tags");
 
-POSITION_OPTIONS.forEach(tag => {
+Object.entries(POSITION_OPTIONS).forEach(([key, label]) => {
   const btn = document.createElement("button");
   btn.className = "tag-btn";
-  btn.textContent = tag;
+  btn.textContent = label;
+  btn.dataset.key = key;
   btn.onclick = () => {
     positionContainer.querySelectorAll(".tag-btn")
       .forEach(b => b.classList.remove("selected"));
@@ -97,10 +102,11 @@ function getSelectedPosition() {
 
 const personalityContainer = document.getElementById("personality-tags");
 
-PERSONALITY_OPTIONS.forEach(tag => {
+Object.entries(PERSONALITY_OPTIONS).forEach(([key, label]) => {
   const btn = document.createElement("button");
   btn.className = "tag-btn";
-  btn.textContent = tag;
+  btn.textContent = label;
+  btn.dataset.key = key;
   btn.onclick = () => {
     personalityContainer.querySelectorAll(".tag-btn")
       .forEach(b => b.classList.remove("selected"));
@@ -119,8 +125,8 @@ function getSelectedPersonality() {
 
 function personalityBias(player) {
   switch (player.personality) {
-    case "차분함": return { tension: -1 };
-    case "공격적": return { tension: +1 };
+    case calm: return { tension: -1 };
+    case leader: return { tension: +1 };
     case "헌신적": return { affection: +1 };
     case "냉소적": return { affection: -1 };
     case "의존적": return { dependence: +1 };
@@ -143,7 +149,11 @@ document.getElementById("btn-add-char").onclick = () => {
   }
 
   characters.push(createCharacter({
-    name, career, position, personality, married
+    name,
+    career,
+    position,
+    personality,
+    married
   }));
 
   renderCharacterList();
@@ -194,12 +204,27 @@ const EMOTION_PRESETS = {
   obsession: { affection: 60, tension: 40, dependence: 30 }
 };
 
+switch (career) {
+  case 'rookie': careerRank = 1; break;
+  case 'midLevel': careerRank = 2; break;
+  case 'experienced': careerRank = 3; break;
+  default: careerRank = 4;
+}
+
 function determineContext(from, to) {
+  const fromAffection = from.relations && from.relations[to.id] && from.relations[to.id].stats && typeof from.relations[to.id].stats.affection === 'number'
+    ? from.relations[to.id].stats.affection
+    : 0;
+
+  const toAffection = to.relations && to.relations[from.id] && to.relations[from.id].stats && typeof to.relations[from.id].stats.affection === 'number'
+    ? to.relations[from.id].stats.affection
+    : 0;
+
   return {
     teammate: true,
-    seniorJunior: from.career > to.career ? "senior" :
-                  from.career < to.career ? "junior" : null,
-    rival: from.position && from.position === to.position,
+    seniorJunior: from.careerRank > to.careerRank ? "senior" :
+                  from.careerRank < to.careerRank ? "junior" : null,
+    rival: (from.position === to.position) && (fromAffection < 0) && (toAffection < 0),
     forbidden: false
   };
 }
@@ -306,7 +331,7 @@ function createRelation(from, to, emotion) {
     logCount: 0
   };
 
-  if (from.married && ["interest", "obsession", "unstable"].includes(emotion)) {
+  if (from.married && ["interest", "obsession"].includes(emotion)) {
     relation.context.forbidden = true;
     relation.stats.tension += 20;
   }
@@ -327,7 +352,7 @@ function renderRelationTable() {
     // 헤더
     const thead = document.createElement("thead");
     const headRow = document.createElement("tr");
-    headRow.innerHTML = `<th>From \\ To</th>`;
+    headRow.innerHTML = `<th>주체 \\ 대상</th>`;
 
     validChars.forEach(c => {
       const th = document.createElement("th");

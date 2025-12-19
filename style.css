@@ -408,3 +408,24 @@ button:hover {
     width: 70px;
   }
 }
+
+.log.bright {
+  color: #333; /* 기본 글자 */
+  font-weight: 500;
+}
+
+.highlight {
+  color: #ff9900; 
+  font-weight: bold;
+}
+
+.italic {
+  font-style: italic;
+  color: #0077cc;   
+}
+
+.cheerful {
+  color: #00aa55;
+  font-weight: bold;
+  text-shadow: 1px 1px 2px #fff;
+}

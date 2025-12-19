@@ -152,6 +152,8 @@
             <div class="game-controls">
                 <button id="btn-next-day">하루 진행</button>
 
+                <!-- 진행 속도 컨트롤 제거: 시스템 고정 속도 사용 -->
+
                 <button id="btn-export-log" onclick="exportLogsAsTXT()">
                 로그 txt 저장
                 </button>
@@ -161,16 +163,22 @@
         <script src="script.js"></script>
 
         <script>
-        /* 로그 화면 렌더링 */
+        /* 로그 화면 렌더링 (showAllLogs/lastDay를 존중) */
         function renderLogs() {
         const area = document.getElementById("log-area");
+        if (!area) return;
         area.innerHTML = "";
 
+        // showAllLogs가 true면 모든 로그, 아니면 lastDay 또는 currentDay만 표시
+        const visibleDay = (typeof showAllLogs !== 'undefined' && showAllLogs) ? null : ((typeof lastDay !== 'undefined' && lastDay !== null) ? lastDay : currentDay);
+
         gameLogs.forEach(log => {
-            const div = document.createElement("div");
-            div.className = "log-entry";
-            div.textContent = `[DAY ${log.day}] ${log.text}`;
-            area.appendChild(div);
+            if (visibleDay === null || log.day === visibleDay || log.day === currentDay) {
+                const div = document.createElement("div");
+                div.className = "log-entry";
+                div.textContent = `[DAY ${log.day}] ${log.text}`;
+                area.appendChild(div);
+            }
         });
 
         area.scrollTop = area.scrollHeight;

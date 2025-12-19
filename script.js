@@ -3,13 +3,21 @@
 const introScreen = document.getElementById("screen-intro");
 const creationScreen = document.getElementById("screen-creation");
 
+const $ = (s) => document.querySelector(s);
+
+// Timing configuration (ms) — 시스템 내부 고정 속도
+const VISUAL_STEP_MS = 600;       // 로그 시각화 간격 (고정)
+const TICK_RELATION_DELAY = 650;  // 각 관계 처리 후 대기 (고정)
+const TICK_PLAYER_DELAY = 900;    // 각 플레이어 처리(이벤트 포함) 후 대기 (고정)
+
+let showAllLogs = false;
+
 document.getElementById("btn-start").onclick = () => {
   introScreen.classList.remove("active");
   creationScreen.classList.add("active");
 };
 
-
-/* 캐릭터 데이터 */
+/* 캐릭터 기본 데이터 */
 
 const characters = [];
 
@@ -21,9 +29,11 @@ function createCharacter({ name, career, position, personality, married }) {
     position,
     personality,
     married,
-    mental: 50,
+    mental: 60,
     energy: 100,
-    relations: {}
+    relations: {},
+    careerRank: getCareerRank(career),
+    active: true
   };
 }
 
@@ -52,13 +62,91 @@ const PERSONALITY_OPTIONS = {
   kind: "다정함"
 };
 
-const SOCIAL_EVENTS ={
-  
-}
+const SOCIAL_EVENTS = {
+  rivial: [
+    ["{a}: 네 실책 때문에 우리가 졌어", "{b}: 남 탓하지마"],
+    ["{a}:", "{b}:"]
+  ],
+  comfort: {
+    junior: [
+      ["{a}:", "{b}:"],
+      ["{a}:", "{b}:"]
 
-/* 캐릭터 설정 */
+    ],
+    senior: [
+      ["{a}:", "{b}:"],
+      ["{a}:", "{b}:"]
+    ],
+    mate: [
+      ["{a}:", "{b}:"],
+      ["{a}:", "{b}:"]
+    ]  
+  },
+  love: {
+    junior: [
+      ["{a}: 이거 마시고 해요", "{b}: …고마워. 진짜."],
+      ["{a}:", "{b}:"]
+    ],
+    senior: [
+      ["{a}:", "{b}:"],
+      ["{a}:", "{b}:"]
+    ],
+    mate: [
+      ["{a}:", "{b}:"],
+      ["{a}:", "{b}:"]
+    ]
+  },
+  
+  forbidden: {
+    junior: {
+      marriedA:[
+        ["{a}: 아내 분은요...?", "{b}: 굳이 얘기할 필요는 없는 것 같은데."],
+        ["{a}:", "{b}:"]
+      ],
+      marriedB:[
+        ["{a}:", "{b}:"],
+        ["{a}:", "{b}:"]
+
+      ]
+    },
+    senior: {
+      merridA:[
+        ["{a}:", "{b}:"],
+        ["{a}:", "{b}:"]
+      ],
+      merridB:[
+        ["{a}:", "{b}:"],
+        ["{a}:", "{b}:"]
+      ]
+    },
+    mate: {
+      merridA:[
+        ["{a}:", "{b}:"],
+        ["{a}:", "{b}:"]
+      ],
+      merridB:[
+        ["{a}:", "{b}:"],
+        ["{a}:", "{b}:"]
+      ]
+    }
+  },
+    
+};
+
+
+/* 캐릭터 등록 (커리어,포지션,성격 버튼) */
 
 const careerContainer = document.getElementById("career-tags");
+
+function getCareerRank(career) {
+  const ranks = { rookie: 1, midLevel: 2, experienced: 3, veteran: 4 };
+  if (!career) return 4;
+  if (ranks[career]) return ranks[career];
+  for (const [key, label] of Object.entries(CAREER_OPTIONS)) {
+    if (label === career) return ranks[key] || 4;
+  }
+  return 4;
+}
 
 Object.entries(CAREER_OPTIONS).forEach(([key, label]) => {
   const btn = document.createElement("button");
@@ -117,19 +205,21 @@ Object.entries(PERSONALITY_OPTIONS).forEach(([key, label]) => {
 
 function getSelectedPersonality() {
   const btn = personalityContainer.querySelector(".tag-btn.selected");
-  return btn ? btn.textContent : null;
+  return btn ? btn.dataset.key : null;
 }
 
 
-/* 성격 보정 */
+/* 성격 보정값 */
 
 function personalityBias(player) {
-  switch (player.personality) {
-    case calm: return { tension: -1 };
-    case leader: return { tension: +1 };
-    case "헌신적": return { affection: +1 };
-    case "냉소적": return { affection: -1 };
-    case "의존적": return { dependence: +1 };
+  const p = player && player.personality ? player.personality : null;
+  switch (p) {
+    case 'calm': return { mental: 20, tension: -1 };
+    case 'leader': return { mental: 30, affection: 3, tension: 1 };
+    case 'dependent': return { mental: -10, jealousy: 3, dependence: 5 };
+    case 'social': return { mental: 20, affection: 4 };
+    case 'sensitive': return { mental: -10, tension: 2 };
+    case 'kind': return { affection: 5 };
     default: return {};
   }
 }
@@ -175,14 +265,15 @@ function renderCharacterList() {
       <strong>${c.name}</strong><br>
       연차: ${c.career}<br>
       포지션: ${c.position}<br>
-      성격: ${c.personality}<br>
+      성격: ${PERSONALITY_OPTIONS[c.personality] || c.personality}<br>
       ${c.married ? "기혼" : "미혼"}
       <button class="btn-delete">×</button>
     `;
-    card.querySelector(".btn-delete").onclick = () => { 
-      const idx = characters.findIndex(x => x.id === c.id); 
-      characters.splice(idx, 1); 
-      renderCharacterList(); 
+    card.querySelector(".btn-delete").onclick = () => {
+      removeCharacterById(c.id);
+      renderCharacterList();
+      refreshRelationSelectors();
+      renderRelationTable();
     };
 
     listGrid.appendChild(card);
@@ -200,16 +291,11 @@ function clearInputs() {
 const EMOTION_PRESETS = {
   neutral:   { affection: 10, tension: 10 },
   interest:  { affection: 40, tension: 20 },
-  dislike:   { affection: -20, tension: 50 },
+  dislike:   { affection: -20, tension: 0 },
   obsession: { affection: 60, tension: 40, dependence: 30 }
 };
 
-switch (career) {
-  case 'rookie': careerRank = 1; break;
-  case 'midLevel': careerRank = 2; break;
-  case 'experienced': careerRank = 3; break;
-  default: careerRank = 4;
-}
+
 
 function determineContext(from, to) {
   const fromAffection = from.relations && from.relations[to.id] && from.relations[to.id].stats && typeof from.relations[to.id].stats.affection === 'number'
@@ -221,10 +307,11 @@ function determineContext(from, to) {
     : 0;
 
   return {
-    teammate: true,
     seniorJunior: from.careerRank > to.careerRank ? "senior" :
-                  from.careerRank < to.careerRank ? "junior" : null,
-    rival: (from.position === to.position) && (fromAffection < 0) && (toAffection < 0),
+                  from.careerRank < to.careerRank ? "junior" : "mate",
+    rival: (from.position === to.position) && (fromAffection < 0) && (toAffection < 0) && (
+      (from.career && to.career && from.career === to.career) || (from.careerRank && to.careerRank && from.careerRank === to.careerRank)
+    ),
     forbidden: false
   };
 }
@@ -295,7 +382,7 @@ document.getElementById("btn-set-relation").onclick = () => {
     from.relations[to.id] = relation;
 
     const label = translateEmotion(relation.emotion) || "관계";
-    gameLogs.push({
+    writeGameLog({
       day: currentDay,
       text: `${from.name} -> ${to.name} 관계가 '${label}'(으)로 설정되었습니다.`
     });
@@ -412,24 +499,30 @@ function renderRelationTable() {
 let currentDay = 1;
 const gameLogs = [];
 
-function dayTick() {
+async function dayTick() {
   console.log("=== dayTick 시작 ===", "currentDay=", currentDay);
 
   const dayForThisTick = currentDay;
 
-  characters.forEach(player => {
+  for (const player of characters) {
+    if (!player || player.active === false) continue;
     const entries = player.relations && typeof player.relations === "object"
       ? Object.entries(player.relations)
       : [];
 
-    entries.forEach(([tid, relation]) => {
+    for (const [tid, relation] of entries) {
       try {
-        if (!relation || typeof relation !== "object") return;
+        if (!relation || typeof relation !== "object") continue;
 
         relation.stats = relation.stats || { affection: 0, tension: 0, jealousy: 0, dependence: 0 };
         relation.logCount = relation.logCount || 0;
 
-        const target = characters.find(c => c.id === tid) || { name: "알 수 없음" };
+        const target = characters.find(c => c.id === tid);
+        if (!target) {
+          // 대상 캐릭터가 삭제되었으면 관계 정리
+          if (player.relations && typeof player.relations === 'object') delete player.relations[tid];
+          continue;
+        }
 
         let log = null;
         try { log = generateRelationLog(player, target, relation); }
@@ -440,10 +533,22 @@ function dayTick() {
 
         if (log) {
           relation.logCount++;
-          gameLogs.push({ day: dayForThisTick, text: log });
+          await writeGameLog({ day: dayForThisTick, text: log });
         } else {
-          const fallback = subtleChangeLogs(player);
-          gameLogs.push({ day: dayForThisTick, text: fallback });
+          // 일정 확률로 SOCIAL_EVENTS에서 무작위 대사를 시도
+          const socialChance = 0.35;
+          if (Math.random() < socialChance) {
+            const soc = trySocialEvent(player, target, relation);
+            if (soc) {
+              await writeGameLog({ day: dayForThisTick, text: soc });
+            } else {
+              const fallbackText = `${player.name}의 하루가 흘렀습니다.`;
+              await writeGameLog({ day: dayForThisTick, text: fallbackText });
+            }
+          } else {
+            const fallbackText = `${player.name}의 하루가 흘렀습니다.`;
+            await writeGameLog({ day: dayForThisTick, text: fallbackText });
+          }
         }
 
         try {
@@ -455,17 +560,35 @@ function dayTick() {
       } catch (err) {
         console.error("dayTick 관계 처리 중 예외:", err, { player: player.name, targetId: tid });
       }
-    });
-  });
+        // 각 관계 처리 후 느리게 진행
+        await sleep(TICK_RELATION_DELAY);
+    }
 
-  if (typeof renderTodayHeader === "function") {
-    try { renderTodayHeader(dayForThisTick); }
-    catch (e) { console.error("renderTodayHeader 오류:", e); }
+    // 플레이어 단위 일일 이벤트(예: SNS) — 비동기로 대기
+    try {
+      await eventSNS(player);
+      
+      // 포지션별 수비/상황 이벤트
+      await eventInfielderError(player);
+      await eventOutfielderError(player);
+      await eventCatcherSChoice(player);
+      await eventbasesloadedInfilder(player);
+      await eventbasesloadedOutfilder(player);
+      
+      // 이전에 만드신 투수 이벤트가 있다면 추가
+      if (typeof eventHardHitBall === "function") {
+        await eventHardHitBall(player);
+      }
+    } catch (e) {
+      console.error(`${player.name} 이벤트 처리 중 오류:`, e);
+    }
+    // 플레이어 단위 지연
+    await sleep(TICK_PLAYER_DELAY);
   }
 
-  currentDay++;
-
-  console.log("=== dayTick 종료 ===", "nextDay=", currentDay);
+  // dayTick는 현재의 `currentDay`를 기준으로 로그를 생성/저장만 합니다.
+  // 일차 증가는 외부(버튼 클릭 등)에서 제어하도록 변경했습니다.
+  console.log("=== dayTick 종료 ===", "processedDay=", dayForThisTick);
 }
 
 /* 로그 생성 */
@@ -474,8 +597,9 @@ function generateRelationLog(player, target, relation) {
   const { emotion, stats, context } = relation;
   const intensity = stats.affection + stats.tension;
 
-  // 금기 로그
+  // 우선 감정 기반 로그
   if (context.forbidden && stats.tension > 50 && Math.random() < 0.5) {
+    applyMental(player, -6);
     return forbiddenHintLogs(player);
   }
 
@@ -483,7 +607,73 @@ function generateRelationLog(player, target, relation) {
   if (emotion === "obsession") return obsessionLogs(player);
   if (emotion === "dislike" && stats.tension > 40) return dislikeLogs(player);
   if (emotion === "interest") return interestLogs(player, target, relation);
-  if (intensity > 60 && Math.random() < 0.4) return generateNoiseLog(player); 
+
+  // 기본 로그가 없으면 null 반환
+  return null;
+}
+
+// SOCIAL_EVENTS에서 상황에 맞는 대사를 선택하고, 필요시 수치 변경을 applyMental/applyEnergy를 통해 수행
+function trySocialEvent(player, target, relation) {
+  if (!relation || !relation.context) return null;
+  const ctx = relation.context;
+
+  // 라이벌 상황 우선
+  if (ctx.rival) {
+    const pool = SOCIAL_EVENTS.rivial || [];
+    if (pool.length) {
+      const tpl = randomFrom(pool);
+      const parts = Array.isArray(tpl) ? tpl : [tpl];
+      const line = parts.map(s => s.replace('{a}', player.name).replace('{b}', target.name)).join(' ');
+      applyMental(player, -4);
+      applyMental(target, -2);
+      return line;
+    }
+  }
+
+  const role = ctx.seniorJunior || 'mate';
+
+  // comfort
+  if (SOCIAL_EVENTS.comfort && SOCIAL_EVENTS.comfort[role]) {
+    const pool = SOCIAL_EVENTS.comfort[role];
+    if (Array.isArray(pool) && pool.length) {
+      const tpl = randomFrom(pool);
+      const parts = Array.isArray(tpl) ? tpl : [tpl];
+      const line = parts.map(s => s.replace('{a}', player.name).replace('{b}', target.name)).join(' ');
+      applyMental(target, +3);
+      return line;
+    }
+  }
+
+  // love
+  if (SOCIAL_EVENTS.love && SOCIAL_EVENTS.love[role]) {
+    const pool = SOCIAL_EVENTS.love[role];
+    if (Array.isArray(pool) && pool.length) {
+      const tpl = randomFrom(pool);
+      const parts = Array.isArray(tpl) ? tpl : [tpl];
+      const line = parts.map(s => s.replace('{a}', player.name).replace('{b}', target.name)).join(' ');
+      applyMental(player, +2);
+      applyEnergy(player, -2);
+      return line;
+    }
+  }
+
+  // forbidden (하위 키가 있는 경우 랜덤 선택)
+  if (SOCIAL_EVENTS.forbidden && SOCIAL_EVENTS.forbidden[role]) {
+    const sub = SOCIAL_EVENTS.forbidden[role];
+    const keys = Object.keys(sub || {});
+    if (keys.length) {
+      const key = randomFrom(keys);
+      const pool = sub[key] || [];
+      if (Array.isArray(pool) && pool.length) {
+        const tpl = randomFrom(pool);
+        const parts = Array.isArray(tpl) ? tpl : [tpl];
+        const line = parts.map(s => s.replace('{a}', player.name).replace('{b}', target.name)).join(' ');
+        applyMental(player, -8);
+        applyEnergy(player, -5);
+        return line;
+      }
+    }
+  }
 
   return null;
 }
@@ -606,19 +796,25 @@ const logContainer = document.getElementById("log-area");
 const btnNextDay  = document.getElementById("btn-next-day");
 
 function renderLogs() {
-  logContainer.innerHTML = ""; 
+  logContainer.innerHTML = "";
+  // showAllLogs가 true일 때만 모든 로그를 보여주고, 아니면 현재(또는 마지막) 일자의 로그만 보여줍니다.
+  const visibleDay = showAllLogs ? null : (lastDay !== null ? lastDay : currentDay);
   gameLogs.forEach(entry => {
-    const div = document.createElement("div");
-    div.textContent = `[DAY ${entry.day}] ${entry.text}`;
-    div.className = "log-entry";
-    logContainer.appendChild(div);
+    if (visibleDay === null || entry.day === visibleDay || entry.day === currentDay) {
+      const div = document.createElement("div");
+      div.textContent = `[DAY ${entry.day}] ${entry.text}`;
+      div.className = "log-entry";
+      logContainer.appendChild(div);
+    }
   });
   logContainer.scrollTop = logContainer.scrollHeight;
 }
 
 const btnNextDayEl = document.getElementById("btn-next-day");
+
 if (btnNextDayEl) {
-  btnNextDayEl.addEventListener("click", () => {
+  btnNextDayEl.addEventListener("click", async () => {
+    // 1. 중복 클릭 방지 (락)
     if (window.__dayTickLocked) {
       console.warn("dayTick 이미 실행 중 — 중복 호출 무시");
       return;
@@ -626,25 +822,35 @@ if (btnNextDayEl) {
     window.__dayTickLocked = true;
 
     try {
-      try { dayTick(); } catch (e) { console.error("dayTick 오류:", e); }
-
-      const dayEl = document.getElementById("day-display");
-      if (dayEl) dayEl.textContent = "DAY " + currentDay;
-
-      if (typeof checkForEvent === "function") {
-        try {
-          const ev = checkForEvent();
-          if (ev && typeof triggerEvent === "function") {
-            try { triggerEvent(ev); } catch (e) { console.error("triggerEvent 오류:", e); }
-          }
-        } catch (e) { console.error("checkForEvent 오류:", e); }
+      // 2. 날짜 증가 및 헤더 갱신
+      currentDay++;
+      if (typeof renderTodayHeader === "function") {
+        renderTodayHeader(currentDay);
       }
 
+      // 3. 메인 로직 실행 (비동기)
+      await dayTick();
+
+      // 4. 전체 로그 렌더링 갱신
       if (typeof renderLogs === "function") {
-        try { renderLogs(); } catch (e) { console.error("renderLogs 오류:", e); }
+        renderLogs();
       }
+
+      // 5. 돌발 이벤트 체크
+      if (typeof checkForEvent === "function") {
+        const ev = checkForEvent();
+        if (ev && typeof triggerEvent === "function") {
+          await triggerEvent(ev); // 이벤트도 비동기일 수 있으므로 await 권장
+        }
+      }
+    } catch (error) {
+      // 바깥쪽 try에 대한 catch 블록 추가 (에러 해결 핵심)
+      console.error("실행 중 전체 오류 발생:", error);
     } finally {
-      setTimeout(() => { window.__dayTickLocked = false; }, 50);
+      // 6. 실행 완료 후 락 해제 (무조건 실행)
+      setTimeout(() => {
+        window.__dayTickLocked = false;
+      }, 50);
     }
   });
 }
@@ -661,6 +867,23 @@ function renderTodayHeader(day) {
   }
   dayRevealCounts[day] = 0;
   lastDay = day;
+  // 메인 로그는 해당 일자만 표시하도록 설정
+  showAllLogs = false;
+  const area = document.getElementById("log-area");
+  if (area) area.innerHTML = ""; // 이전 내용 제거
+
+  // 시각 큐에서 현재/마지막 일자만 유지하여 불필요한 스킵을 방지
+  purgeVisualQueue(day);
+}
+
+function purgeVisualQueue(visibleDay) {
+  if (!Array.isArray(_visualQueue) || _visualQueue.length === 0) return;
+  const keep = [];
+  for (const e of _visualQueue) {
+    if (!e || typeof e.day !== 'number') continue;
+    if (e.day === visibleDay || e.day === currentDay) keep.push(e);
+  }
+  _visualQueue = keep;
 }
 
 function revealNextLogForDay(day) {
@@ -699,6 +922,7 @@ function revealNextLogForDay(day) {
 const btnShowAll = document.getElementById("btn-show-all-logs");
 if (btnShowAll) {
   btnShowAll.addEventListener("click", () => {
+    showAllLogs = true;
     if (typeof renderLogs === "function") {
       renderLogs();
       const area = document.getElementById("log-area");
@@ -713,4 +937,503 @@ if (dayDisplayBtn) {
     if (lastDay == null) return;
     revealNextLogForDay(lastDay);
   });
+}
+/* 필수 함수 */
+function chance(p) { return Math.random() < p; }
+
+function applyMental(c, delta) {
+  const bias = personalityBias(c);
+  const mult = bias?.mental ? 1 + bias.mental / 100 : 1;
+
+  const d = Math.round(delta * mult);
+
+  c.mental = Math.max(0, Math.min(100, c.mental + d));
+}
+
+function applyEnergy(player, delta) {
+  if (!player) return;
+
+  player.energy = Math.max(0, Math.min(100, player.energy + delta));
+
+  // console.log(`${player.name}의 에너지가 ${delta > 0 ? "증가" : "감소"}하여 현재 ${player.energy}입니다.`);
+}
+
+
+function logLine(text, type = "system") {
+  const logBox = $("#console-log");
+  if (!logBox) return;
+  const cursor = logBox.querySelector(".log-cursor");
+
+  const p = document.createElement("p");
+  p.className = `log ${type}`;
+  p.textContent = text;
+
+  if (cursor) logBox.insertBefore(p, cursor);
+  else logBox.appendChild(p);
+
+  logBox.scrollTop = logBox.scrollHeight;
+}
+function emphasizeText(text, style = "highlight") {
+  // style 종류: "highlight", "bold", "italic", "cheerful" 등
+  return `<span class="${style}">${text}</span>`;
+}
+
+async function logEmphasizedLine(prefix, text, style = "highlight") {
+  const logBox = $("#console-log");
+  if (!logBox) return;
+  const cursor = logBox.querySelector(".log-cursor");
+
+  const p = document.createElement("p");
+  p.className = `log bright`; 
+  p.innerHTML = `${emphasizeText(prefix)} ${emphasizeText(text, style)}`;
+
+  if (cursor) logBox.insertBefore(p, cursor);
+  else logBox.appendChild(p);
+
+  logBox.scrollTop = logBox.scrollHeight;
+  await sleep(90);
+}
+
+
+// --- 중앙 로그 및 비동기 표시 큐 ---
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+let _visualQueue = [];
+let _visualProcessing = false;
+
+async function _processVisualQueue() {
+  if (_visualProcessing) return;
+  _visualProcessing = true;
+  const area = document.getElementById("log-area");
+  while (_visualQueue.length) {
+    const entry = _visualQueue.shift();
+    try {
+      // showAllLogs 모드일 때는 개별 항목을 추가하지 않습니다 (renderLogs 사용)
+      if (showAllLogs) {
+        // append with pacing
+        if (area) {
+          const div = document.createElement("div");
+          div.className = "log-entry";
+          div.textContent = `[DAY ${entry.day}] ${entry.text}`;
+          area.appendChild(div);
+          area.scrollTop = area.scrollHeight;
+        }
+        await sleep(VISUAL_STEP_MS);
+      } else {
+        // 메인 로그는 현재/마지막 일차 항목만 표시
+        const visibleDay = (lastDay !== null) ? lastDay : currentDay;
+        if (entry.day === visibleDay || entry.day === currentDay) {
+          if (area) {
+            const div = document.createElement("div");
+            div.className = "log-entry";
+            div.textContent = `[DAY ${entry.day}] ${entry.text}`;
+            area.appendChild(div);
+            area.scrollTop = area.scrollHeight;
+          }
+          // only pace when we actually displayed something
+          await sleep(VISUAL_STEP_MS);
+        } else {
+          // skip old-day entries quickly without waiting to speed up day-splitting
+          continue;
+        }
+      }
+    } catch (e) {
+      console.error("visual log append error:", e);
+    }
+  }
+  _visualProcessing = false;
+}
+
+async function writeGameLog(entry) {
+  try {
+    // 저장소에 추가
+    gameLogs.push(entry);
+    // UI 즉시 전체 재렌더는 제거 — 시각 큐가 순차적으로 표시합니다.
+    _visualQueue.push(entry);
+    _processVisualQueue();
+  } catch (e) {
+    console.error("writeGameLog error:", e);
+  }
+}
+
+async function logGlitchLine(prefix, text, style = "system", delay = 0.6) {
+  const entry = { day: currentDay, text: `${prefix} ${text}` };
+  // 영구 로그에 저장하고 시각 큐로 표시되도록 writeGameLog 사용
+  await writeGameLog(entry);
+  await sleep(Math.round(delay * 1000));
+}
+
+function askChoice(opts) {
+  return new Promise(resolve => {
+    const existing = document.getElementById("askChoice-modal");
+    if (existing) existing.remove();
+
+    const wrap = document.createElement("div");
+    wrap.id = "askChoice-modal";
+    wrap.style = "position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:9999;";
+
+    const bg = document.createElement("div");
+    bg.style = "position:absolute;inset:0;background:rgba(0,0,0,0.45);";
+    wrap.appendChild(bg);
+
+    const box = document.createElement("div");
+    box.style = "background:#fff;padding:18px;border-radius:8px;min-width:300px;max-width:90%;z-index:1;";
+
+    const t = document.createElement("div");
+    t.style = "font-weight:700;margin-bottom:8px;";
+    t.textContent = opts.title || "선택";
+    box.appendChild(t);
+
+    const b = document.createElement("div");
+    b.style = "margin-bottom:12px;";
+    b.textContent = opts.body || "";
+    box.appendChild(b);
+
+    const btnRow = document.createElement("div");
+    btnRow.style = "display:flex;gap:8px;justify-content:flex-end;";
+
+    (opts.options || []).forEach(o => {
+      const btn = document.createElement("button");
+      btn.textContent = o.label || o.value;
+      btn.onclick = () => { wrap.remove(); resolve(o.value); };
+      btnRow.appendChild(btn);
+    });
+
+    const cancel = document.createElement("button");
+    cancel.textContent = "취소";
+    cancel.onclick = () => { wrap.remove(); resolve(null); };
+    btnRow.appendChild(cancel);
+
+    box.appendChild(btnRow);
+    wrap.appendChild(box);
+    document.body.appendChild(wrap);
+  });
+}
+
+
+/* 일일이벤트*/
+async function eventSNS(c) {
+  if (!chance(0.10)) return;
+
+  try {
+    await logGlitchLine(">>", `SNS 디엠이 왔다`, "warning", 0.55);
+
+    const ans = await askChoice({
+      title: "[CHOICE]",
+      body: `디엠에 답을 하시겠습니까?`,
+      options: [
+        { label: "대답한다", value: "enter" },
+        { label: "무시한다", value: "ignore" },
+      ],
+    });
+
+    if (ans === "ignore") {
+      applyMental(c, -5);
+      logLine(`>> [SYSTEM] ${c.name}은(는) 디엠에 답을 하지 않았다.`, "warning");
+      if (c.mental <= 0) {
+        c.mental = 0;
+        logLine(`>> [SYSTEM] ${c.name}은(는) 더 버티지 못하고 2군으로 내려갔습니다`, "warning");
+        return;
+      }
+      return;
+    }
+    else if (!chance(0.10)) {
+      await logGlitchLine(">>", `한 아이의 디엠을 받았습니다`, "warning", 0.75);
+      await logGlitchLine(">>", `아이에게 보낸 디엠이 퍼져 미담으로 번졌습니다`, "warning", 0.85);
+      applyMental(c, +10)
+    } 
+    else {
+      await logGlitchLine(">>", `화난 팬의 디엠을 받았습니다`, "warning", 0.75);
+      await logGlitchLine(">>", `디엠의 답이 논란이 되어 부정적인 여론이 돕니다.`, "warning", 0.85);
+      applyMental(c, -15);
+      applyEnergy(c, -15)
+    }
+  } catch (e) {
+    console.error("eventSNS 오류:", e);
+  }
+}
+
+async function eventHardHitBall(c) {      
+  if (c.position !== 'pitcher') return;
+  if (!chance(0.10)) return;
+
+  try {
+    await logGlitchLine(">>", `강습타구가 날라온다`, "warning", 0.55);
+
+    const ans = await askChoice({
+      title: "[CHOICE]",
+      body: `강습타구를 잡으시겠습니까?`,
+      options: [
+        { label: "잡는다", value: "catch" },
+        { label: "피한다", value: "ignore" },
+      ],
+    });
+
+    if (ans === "ignore") {
+
+      applyMental(c, -5);
+      logLine(`>> [SYSTEM] ${c.name}은(는) 점수를 주고 말았다.`, "warning");
+      if (c.mental <= 0) {
+        c.mental = 0;
+        logLine(`>> [SYSTEM] ${c.name}은(는) 더 버티지 못하고 시합 후 2군으로 내려갔습니다`, "warning");
+        return;
+      }
+      return;
+    }
+    else if (!chance(0.10)) {
+      await logGlitchLine(">>", `강습타구를 제대로 잡아 1루로 송구하였습니다`, "warning", 0.75);
+      await logGlitchLine(">>", `병살을 잡아 이닝이 종료되었습니다`, "warning", 0.85);
+      applyMental(c, +10)
+    } 
+    else {
+      await logGlitchLine(">>", `강습타구에 맞았습니다`, "warning", 0.75);
+      await logGlitchLine(">>", `부상으로 다음 등판이 밀리게 되었습니다.`, "warning", 0.85);
+      applyMental(c, -10);
+      applyEnergy(c, -20)
+    }
+  } catch (e) {
+    console.error("eventHardHitBall 오류:", e);
+  }
+}
+
+async function eventInfielderError(c) {
+  if (c.position !== 'infielder') return;
+  if (!chance(0.10)) return;
+
+  try {
+    await logGlitchLine(">>", `옆 수비수와 ${c.name} 사이에 공이 굴러온다`, "warning", 0.55);
+
+    const ans = await askChoice({
+      title: "[CHOICE]",
+      body: `공을 잡으시겠습니까?`,
+      options: [
+        { label: "잡는다", value: "catch" },
+        { label: "피한다", value: "ignore" },
+      ],
+    });
+
+    if (ans === "ignore") {
+      if (!chance(0.30)) {
+        applyMental(c, -5);
+        logLine(`>> [SYSTEM] ${c.name}은(는) 점수를 주고 말았다.`, "warning");
+        if (c.mental <= 0) {
+          c.mental = 0;
+          logLine(`>> [SYSTEM] ${c.name}은(는) 더 버티지 못하고 시합 후 2군으로 내려갔습니다`, "warning");
+          return;}
+      }
+      else {
+        await logGlitchLine(">>", `옆 수비수가 공을 잡아 주자를 잡았습니다.`, "warning", 0.75);
+        applyMental(c, +3);
+      }
+      return;
+    }
+    else if (!chance(0.10)) {
+      await logGlitchLine(">>", `공을 제대로 잡아 2루로 송구했다`, "warning", 0.75);
+      await logGlitchLine(">>", `병살을 잡아 이닝이 종료되었습니다`, "warning", 0.85);
+      applyMental(c, +10)
+    } 
+    else {
+      await logGlitchLine(">>", `옆 수비수와 겹쳐 둘 다 공을 놓쳤다`, "warning", 0.75);
+      await logGlitchLine(">>", `그 사이 주자가 홈으로 들어왔습니다.`, "warning", 0.85);
+      applyMental(c, -10);
+    }
+  } catch (e) {
+    console.error("eventInfielderError 오류:", e);
+  }
+}
+
+async function eventOutfielderError(c) {
+  if (c.position !== 'outfielder') return;
+  if (!chance(0.10)) return;
+
+  try {
+    await logGlitchLine(">>", `옆 수비수와 ${c.name} 사이에 공이 날라온다`, "warning", 0.55);
+
+    const ans = await askChoice({
+      title: "[CHOICE]",
+      body: `공을 잡으시겠습니까?`,
+      options: [
+        { label: "잡는다", value: "catch" },
+        { label: "피한다", value: "ignore" },
+      ],
+    });
+
+    if (ans === "ignore") {
+      if (!chance(0.30)) {
+        applyMental(c, -5);
+        logLine(`>> [SYSTEM] ${c.name}은(는) 점수를 주고 말았다.`, "warning");
+        if (c.mental <= 0) {
+          c.mental = 0;
+          logLine(`>> [SYSTEM] ${c.name}은(는) 더 버티지 못하고 시합 후 2군으로 내려갔습니다`, "warning");
+          return;}
+      }
+      else {
+        await logGlitchLine(">>", `옆 수비수가 공을 잡아 뜬공 처리를 했습니다.`, "warning", 0.75);
+        applyMental(c, +3);
+      }
+      return;
+    }
+    else if (!chance(0.10)) {
+      await logGlitchLine(">>", `공을 제대로 잡아 1루로 송구했다`, "warning", 0.75);
+      await logGlitchLine(">>", `병살을 잡아 이닝이 종료되었습니다`, "warning", 0.85);
+      applyMental(c, +10)
+    } 
+    else {
+      await logGlitchLine(">>", `옆 수비수와 겹쳐 둘 다 공을 놓쳤다`, "warning", 0.75);
+      await logGlitchLine(">>", `그 사이 주자가 홈으로 들어왔습니다.`, "warning", 0.85);
+      applyMental(c, -10);
+    }
+  } catch (e) {
+    console.error("eventInfielderError 오류:", e);
+  }
+}
+
+async function eventCatcherSChoice(c) {
+  if (c.position !== 'catcher') return;
+  if (!chance(0.10)) return;
+
+  try {
+    await logGlitchLine(">>", `번트 타구를 잡았다`, "warning", 0.55);
+
+    const ans = await askChoice({
+      title: "[CHOICE]",
+      body: `어디로 던지겠습니까?`,
+      options: [
+        { label: "1루", value: "onebase" },
+        { label: "3루", value: "threebase" },
+      ],
+    });
+
+    if (ans === "threebase") {
+      if (!chance(0.30)) {
+        applyMental(c, -5);
+        logLine(`>> [SYSTEM] ${c.name}은(는) 주자를 전부 살려 버렸다.`, "warning");
+        if (c.mental <= 0) {
+          c.mental = 0;
+          logLine(`>> [SYSTEM] ${c.name}은(는) 더 버티지 못하고 시합 후 2군으로 내려갔습니다`, "warning");
+          return;}
+      }
+      else {
+        await logGlitchLine(">>", `3루로 가던 주자를 아웃시켰다.`, "warning", 0.75);
+        applyMental(c, +5);
+      }
+      return;
+    }
+    else if (!chance(0.50)) {
+      await logGlitchLine(">>", `공을 제대로 잡아 1루로 송구했다`, "warning", 0.75);
+      await logGlitchLine(">>", `1루 주자를 아웃시켰습니다. 3루는 세이프`, "warning", 0.85);
+      applyMental(c, +3)
+    } 
+    else {
+      await logGlitchLine(">>", `1루에 송구 미스가 났다`, "warning", 0.75);
+      await logGlitchLine(">>", `그 사이 주자가 홈으로 들어왔습니다.`, "warning", 0.85);
+      applyMental(c, -10);
+    }
+  } catch (e) {
+    console.error("eventCatcherSChoice 오류:", e);
+  }
+}
+
+async function eventbasesloadedInfilder(c) {
+  if (c.position !== 'infielder') return;
+  if (!chance(0.10)) return;
+
+  try {
+    await logGlitchLine(">>", `만루 상황에 공이 ${c.name} 앞으로 굴러온다`, "warning", 0.55);
+
+    const ans = await askChoice({
+      title: "[CHOICE]",
+      body: `공을 어디로 던지시겠습니까?`,
+      options: [
+        { label: "2루", value: "twobase" },
+        { label: "홈", value: "home" },
+      ],
+    });
+
+    if (ans === "home") {
+      if (!chance(0.30)) {
+        applyMental(c, -10);
+        logLine(`>> [SYSTEM] 송구 미스로 ${c.name}은(는) 점수를 주고 말았다. 2실점`, "warning");
+        if (c.mental <= 0) {
+          c.mental = 0;
+          logLine(`>> [SYSTEM] ${c.name}은(는) 더 버티지 못하고 시합 후 2군으로 내려갔습니다`, "warning");
+          return;}
+      }
+      else {
+        await logGlitchLine(">>", `홈승부가 성공해 실점없이 아웃카운트를 잡았다.`, "warning", 0.75);
+        applyMental(c, +3);
+      }
+      return;
+    }
+    else if (!chance(0.10)) {
+      await logGlitchLine(">>", `공을 제대로 잡아 2루로 송구했다`, "warning", 0.75);
+      await logGlitchLine(">>", `병살을 잡아 이닝이 종료되었습니다`, "warning", 0.85);
+      applyMental(c, +10)
+    } 
+    else {
+      await logGlitchLine(">>", `2루 주자만 아웃시켰다`, "warning", 0.75);
+      await logGlitchLine(">>", `그 사이 주자가 홈으로 들어왔습니다.`, "warning", 0.85);
+      applyMental(c, -3);
+    }
+  } catch (e) {
+    console.error("eventbasesloadedInfilder 오류:", e);
+  }
+}
+
+async function eventbasesloadedOutfilder(c) {
+  if (c.position !== 'outfielder') return;
+  if (!chance(0.10)) return;
+
+  try {
+    await logGlitchLine(">>", `만루 상황에 공이 ${c.name} 앞으로 날라온다`, "warning", 0.55);
+
+    const ans = await askChoice({
+      title: "[CHOICE]",
+      body: `공을 어디로 던지시겠습니까?`,
+      options: [
+        { label: "3루", value: "threebase" },
+        { label: "홈", value: "home" },
+      ],
+    });
+
+    if (ans === "home") {
+      if (!chance(0.30)) {
+        applyMental(c, -10);
+        logLine(`>> [SYSTEM] 송구 미스로 주자가 한 베이스씩 더 이동했다. 2실점`, "warning");
+        if (c.mental <= 0) {
+          c.mental = 0;
+          logLine(`>> [SYSTEM] ${c.name}은(는) 더 버티지 못하고 시합 후 2군으로 내려갔습니다`, "warning");
+          return;}
+      }
+      else {
+        await logGlitchLine(">>", `홈승부가 성공해 실점없이 아웃카운트 두개를 잡았다.`, "warning", 0.75);
+        applyMental(c, +10);
+      }
+      return;
+    }
+    else if (!chance(0.10)) {
+      await logGlitchLine(">>", `공을 제대로 잡아 3루로 송구했다`, "warning", 0.75);
+      await logGlitchLine(">>", `주자들이 진루하는 것을 막았습니다`, "warning", 0.85);
+      applyMental(c, +5)
+    } 
+    else {
+      await logGlitchLine(">>", `3루로 간 공이 빠졌다`, "warning", 0.75);
+      await logGlitchLine(">>", `그 사이 주자가 한명 더 홈으로 들어왔습니다. 2실점`, "warning", 0.85);
+      applyMental(c, -5);
+    }
+  } catch (e) {
+    console.error("eventbasesloadedInfilder 오류:", e);
+  }
+}
+
+function removeCharacterById(id) {
+  if (!id) return;
+  characters.forEach(ch => {
+    if (ch.relations && typeof ch.relations === 'object' && ch.relations[id]) {
+      delete ch.relations[id];
+    }
+  });
+
+  const idx = characters.findIndex(x => x.id === id);
+  if (idx >= 0) characters.splice(idx, 1);
 }

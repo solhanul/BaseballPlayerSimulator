@@ -1,6 +1,4 @@
-/* ===============================
-   1. 기본 리셋
-================================ */
+/* 초기화*/
 * {
   box-sizing: border-box;
 }
@@ -13,9 +11,7 @@ body {
     "Segoe UI", Roboto, "Noto Sans KR", sans-serif;
 }
 
-/* ===============================
-   2. 화면 공통
-================================ */
+/* 화면 공통 */
 .screen {
   display: none;
   position: fixed;
@@ -37,9 +33,7 @@ h1, h2, h3 {
   font-weight: 600;
 }
 
-/* ===============================
-   3. 인트로
-================================ */
+/* 인트로 */
 #screen-intro {
   display: flex;
   justify-content: center;
@@ -59,9 +53,7 @@ h1, h2, h3 {
   margin-bottom: 24px;
 }
 
-/* ===============================
-   4. 레이아웃
-================================ */
+/* 레이아웃 */
 .creation-layout,
 .relation-layout,
 .game-layout {
@@ -82,9 +74,7 @@ h1, h2, h3 {
   }
 }
 
-/* ===============================
-   5. 패널
-================================ */
+/* 패널 */
 .panel {
   background: #ffffff;
   border: 1px solid #e0e0e0;
@@ -94,9 +84,7 @@ h1, h2, h3 {
   flex-direction: column;
 }
 
-/* ===============================
-   6. 폼
-================================ */
+/* 인풋요소들 */
 .form-group {
   margin-bottom: 16px;
 }
@@ -124,9 +112,7 @@ select:focus {
   border-color: #3b82f6;
 }
 
-/* ===============================
-   7. 버튼 (단순)
-================================ */
+/* 버튼 */
 button {
   padding: 8px 14px;
   border-radius: 8px;
@@ -173,9 +159,7 @@ button.btn-io:hover, .small-link:hover {
   background: #e6f0fa;
 }
 
-/* ===============================
-   8. 태그 / 감정 버튼
-================================ */
+/* 태그 감정 버튼 */
 .tag-container {
   display: flex;
   flex-wrap: wrap;
@@ -213,9 +197,7 @@ button.btn-io:hover, .small-link:hover {
   border-color: #60a5fa;
 }
 
-/* ===============================
-   9. 캐릭터 카드 리스트
-================================ */
+/* 캐릭터 카드 리스트 */
 #char-list {
   display: flex;
   flex-direction: column;
@@ -248,9 +230,7 @@ button.btn-io:hover, .small-link:hover {
   color: #ef4444;
 }
 
-/* ===============================
-   10. 게임 화면 레이아웃
-================================ */
+/* 게임 화면 레이아웃 */
 #screen-game.active {
   display: flex !important;
   flex-direction: column; 
@@ -346,9 +326,7 @@ button.btn-io:hover, .small-link:hover {
   background: #3b82f6;
 }
 
-/* ===============================
-   11. 테이블 (관계표)
-================================ */
+/* 테이블 */
 .relation-table-wrapper {
   margin-top: 24px;
   background: #ffffff;
@@ -401,7 +379,7 @@ button.btn-io:hover, .small-link:hover {
 .emotion-obsession { background: #fdf2f8; }
 .emotion-neutral { background: #f8fafc; }
 
-/* 12. 이벤트 패널 */
+/* 이벤트 패널 */
 .event-panel {
   position: absolute; 
   top: 0; 
@@ -416,24 +394,20 @@ button.btn-io:hover, .small-link:hover {
   overflow-y: auto;
 }
 
-/* ===============================
-   13. 모바일
-================================ */
-/* [데스크탑/기본] 탭 버튼 숨기기 */
+/* 반응형웹  */
+
+/* 기본: 탭 버튼 숨기기 */
 .mobile-tabs {
-    display: none !important; /* 넓은 화면에선 버튼 아예 안 보임 */
+    display: none !important;
 }
 
-/* [데스크탑/기본] 로그와 상태창을 좌우로 동시 노출 */
+/* 기본: 로그 상태창 좌우 동시 노출 */
 .content-box {
-    display: flex !important; /* PC에선 두 박스 모두 항상 표시 */
+    display: flex !important; 
 }
 
-/* ===============================
-   모바일 반응형 (768px 이하)
-================================ */
+/* 모바일 */
 @media (max-width: 768px) {
-    /* 모바일에서만 탭 버튼 노출 */
     .mobile-tabs {
         display: flex !important;
         gap: 5px;
@@ -441,12 +415,12 @@ button.btn-io:hover, .small-link:hover {
         flex-shrink: 0;
     }
 
-    /* 모바일에서는 비활성 탭 공간 제거 (하나씩만 보이게) */
+    /* 비활성 탭 공간 제거 */
     .content-box {
         display: none !important;
     }
 
-    /* active 클래스가 붙은 박스만 크게 노출 */
+    /* active 클래스 요소 노출 */
     .content-box.active {
         display: flex !important;
         width: 100% !important;

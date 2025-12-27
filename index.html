@@ -172,97 +172,113 @@
         <script src="script.js"></script>
 
         <script>
-        function renderLogs() {
-        const area = document.getElementById("log-area");
-        if (!area) return;
-        area.innerHTML = "";
+            function renderLogs() {
+            const area = document.getElementById("log-area");
+            if (!area) return;
+            area.innerHTML = "";
 
-        // showAllLogs가 true면 모든 로그, 아니면 lastDay 또는 currentDay만 표시
-        const visibleDay = (typeof showAllLogs !== 'undefined' && showAllLogs) ? null : ((typeof lastDay !== 'undefined' && lastDay !== null) ? lastDay : currentDay);
+            // showAllLogs가 true면 모든 로그, 아니면 lastDay 또는 currentDay만 표시
+            const visibleDay = (typeof showAllLogs !== 'undefined' && showAllLogs) ? null : ((typeof lastDay !== 'undefined' && lastDay !== null) ? lastDay : currentDay);
 
-        gameLogs.forEach(log => {
-            if (visibleDay === null || log.day === visibleDay || log.day === currentDay) {
-                const div = document.createElement("div");
-                div.className = "log-entry";
-                div.textContent = `[DAY ${log.day}] ${log.text}`;
-                area.appendChild(div);
+            gameLogs.forEach(log => {
+                if (visibleDay === null || log.day === visibleDay || log.day === currentDay) {
+                    const div = document.createElement("div");
+                    div.className = "log-entry";
+                    div.textContent = `[DAY ${log.day}] ${log.text}`;
+                    area.appendChild(div);
+                }
+            });
+
+            area.scrollTop = area.scrollHeight;
             }
-        });
-
-        area.scrollTop = area.scrollHeight;
-        }
-
-        /* TXT 저장 */
-        function exportLogsAsTXT() {
-        const content = gameLogs
-            .map(l => `[DAY ${l.day}] ${l.text}`)
-            .join("\n");
-
-        const blob = new Blob([content], { type: "text/plain" });
-        const url = URL.createObjectURL(blob);
-
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = "game_log.txt";
-        a.click();
-
-        URL.revokeObjectURL(url);
-        }
         </script>
         <script>
+            /* TXT 로그 저장 */
+            function exportLogsAsTXT() {
+                // 수정: gameLogs -> state.gameLogs
+                if (!state.gameLogs || state.gameLogs.length === 0) {
+                    alert("저장할 로그가 없습니다.");
+                    return;
+                }
+
+                const content = state.gameLogs
+                    .map(l => `[DAY ${l.day}] ${l.text}`)
+                    .join("\n");
+
+                const blob = new Blob([content], { type: "text/plain" });
+                const url = URL.createObjectURL(blob);
+
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = "game_log.txt";
+                a.click();
+
+                URL.revokeObjectURL(url);
+            }
+
+            /* JSON 데이터 저장 (내보내기) */
             document.getElementById("btn-export").onclick = () => {
-            const data = {
-                characters,
-                gameLogs,
-                currentDay
+                // 수정: state 객체 내부의 변수를 참조하도록 변경
+                const data = {
+                    characters: state.characters,
+                    gameLogs: state.gameLogs,
+                    currentDay: state.currentDay
+                };
+
+                const json = JSON.stringify(data, null, 2);
+                const blob = new Blob([json], { type: "application/json" });
+                const url = URL.createObjectURL(blob);
+
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = "relation_simulation_save.json";
+                a.click();
+
+                URL.revokeObjectURL(url);
             };
 
-            const json = JSON.stringify(data, null, 2);
-            const blob = new Blob([json], { type: "application/json" });
-            const url = URL.createObjectURL(blob);
-
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = "relation_simulation_save.json";
-            a.click();
-
-            URL.revokeObjectURL(url);
-            };
-        </script>
-        <script>
+            /* JSON 데이터 불러오기 */
             const fileInput = document.getElementById("file-input");
             document.getElementById("btn-import").onclick = () => {
-            fileInput.click();
+                fileInput.click();
             };
 
             fileInput.onchange = e => {
-            const file = e.target.files[0];
-            if (!file) return;
+                const file = e.target.files[0];
+                if (!file) return;
 
-            const reader = new FileReader();
-            reader.onload = ev => {
-                try {
-                const data = JSON.parse(ev.target.result);
+                const reader = new FileReader();
+                reader.onload = ev => {
+                    try {
+                        const data = JSON.parse(ev.target.result);
 
-                characters.length = 0;
-                characters.push(...data.characters);
+                        // 수정: state 객체 업데이트
+                        state.characters.length = 0;
+                        if (data.characters) state.characters.push(...data.characters);
 
-                gameLogs.length = 0;
-                gameLogs.push(...(data.gameLogs || []));
+                        state.gameLogs.length = 0;
+                        if (data.gameLogs) state.gameLogs.push(...data.gameLogs);
 
-                currentDay = data.currentDay || 1;
+                        state.currentDay = data.currentDay || 1;
 
-                renderCharacterList();
-                refreshRelationSelectors();
-                renderRelationTable();
+                        // 수정: UIManager를 통해 화면 갱신 함수 호출
+                        UIManager.renderCharacterList();
+                        UIManager.refreshRelationSelectors();
+                        UIManager.renderRelationTable();
+                        
+                        // 로그 화면도 갱신
+                        UIManager.renderLogs();
 
-                alert("데이터를 성공적으로 불러왔습니다.");
-                } catch (err) {
-                alert("잘못된 파일입니다.");
-                }
-            };
+                        alert("데이터를 성공적으로 불러왔습니다.");
+                    } catch (err) {
+                        console.error(err);
+                        alert("잘못된 파일이거나 불러오는 중 오류가 발생했습니다.");
+                    }
+                };
 
-            reader.readAsText(file);
+                reader.readAsText(file);
+                // 파일 입력 초기화 (같은 파일 다시 로드 가능하게)
+                e.target.value = '';
             };
         </script>
     </body>

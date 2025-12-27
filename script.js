@@ -393,7 +393,7 @@ const UIManager = {
             card.className = "mini-card";
             card.innerHTML = `
                 <strong>${c.name}</strong><br>
-                ${c.career} / ${c.position} / ${OPTIONS.PERSONALITY[c.personality]}
+                ${OPTIONS.CAREER[c.career]} / ${OPTIONS.POSITION[c.position]} / ${OPTIONS.PERSONALITY[c.personality]}
                 <button class="btn-delete">×</button>
             `;
             card.querySelector(".btn-delete").onclick = () => {

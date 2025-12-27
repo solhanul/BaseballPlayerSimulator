@@ -478,7 +478,7 @@ const UIManager = {
             div.innerHTML = `
                 <div style="font-weight:bold; font-size:1.1em; margin-bottom:4px;">${c.name}</div>
                 <div style="font-size:0.8em; color:#666; margin-bottom:8px;">
-                   ${c.position} / ${c.career} ${c.married ? '(기혼)' : ''}
+                   ${OPTIONS.POSITION[c.position]} / ${OPTIONS.CAREER[c.career]} ${c.married ? '(기혼)' : ''}
                 </div>
                 <div style="font-size:0.8em;">멘탈 (${c.mental}%)</div>
                 <div class="bar-container"><div class="bar-fill" style="width:${c.mental}%; background:#4a90e2;"></div></div>

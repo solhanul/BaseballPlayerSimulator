@@ -1038,6 +1038,45 @@ const GameEvents = {
         } catch (e) { console.error(e); }
     },
 
+    // 연인 관계 후퇴 이벤트
+    eventRelationshipCrack: async (c) => {
+        const target = state.characters.find(t =>
+            c.relations[t.id]?.type === "lover" &&
+            (c.relations[t.id]?.stats.tension >= 30)
+        );
+        if (!target || !Utils.chance(0.15)) return;
+
+        try {
+            await GameLogger.logLine("❄️", `${target.name}과의 분위기가 어딘가 어색하다`, "warning", 0.7);
+
+            const ans = await UIManager.askChoice({
+                title: "[개인 이벤트: 균열]",
+                body: `${target.name}와()과의 관계 이대로 괜찮은 걸까?`,
+                options: [
+                    { label: "솔직하게 말한다", value: "honest" },
+                    { label: "괜찮은 척 넘긴다", value: "hide" },
+                ],
+            });
+
+            await GameLogger.logLine("[개인 이벤트: 균열]", `${target.name}와()과의 관계 이대로 괜찮은 걸까?`, "info", 0.7);
+            await GameLogger.logLine("📝", `<span class="log-choice-record">선택: ${ans === "honest" ? "솔직하게 말한다" : "괜찮은 척 한다"}</span>`, "desc");
+
+            if (ans === "honest" && !Utils.chance(0.5)) {
+                await GameLogger.logLine("…", `대화 끝에 숨이 조금 트였다`, "info", 0.7);
+                await GameLogic.applyTension(c, target, -10);
+                await GameLogic.applyAffection(c, target, 5);
+            } else if (ans === "honest") {
+                await GameLogger.logLine("❄️", `대화가 싸움으로 번졌다`, "warning", 1.0);
+                await GameLogic.applyAffection(c, target, -5);
+                await GameLogic.applyMental(c, -10);
+            } else {
+                await GameLogger.logLine("❄️", `말하지 않은 말들이 쌓였다`, "warning", 0.8);
+                await GameLogic.applyAffection(c, target, -5);
+                await GameLogic.applyTension(c, target, 10);
+            }
+        } catch (e) { console.error(e); }
+    },
+
 };
 
 /* 메인 루프 */

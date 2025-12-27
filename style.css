@@ -560,3 +560,19 @@ button.btn-io:hover, .small-link:hover {
         max-width: none !important;
     }
 }
+
+
+.day-divider {
+  text-align: center;
+  margin: 20px 0 10px 0;
+  font-weight: bold;
+  font-size: 14px;
+  color: #888;
+  border-bottom: 1px solid #ddd;
+  line-height: 0.1em;
+}
+
+.day-divider span {
+  background: #fafafa;
+  padding: 0 10px;
+}

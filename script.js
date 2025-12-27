@@ -20,74 +20,77 @@ const EMOTION_PRESETS = {
 
 // 이벤트 대사 데이터
 const SOCIAL_EVENTS = {
-  rival: [
-    ["{a}: 네 실책 때문에 우리가 졌어", "{b}: 남 탓하지마"],
-    ["{a}:", "{b}:"]
-  ],
-  comfort: {
-    junior: [
-      ["{a}:", "{b}:"],
-      ["{a}:", "{b}:"]
-
+    rival: [
+        ["{a}: 네 실책 때문에 우리가 졌어.", "{b}: 남 탓하지 마."],
+        ["{a}: 너보다 내가 더 잘 던질 거야.", "{b}: 꿈도 야무지네."],
+        ["{a}: 감독님이 날 더 신뢰하는 거 알지?", "{b}: ...두고 봐."]
     ],
-    senior: [
-      ["{a}:", "{b}:"],
-      ["{a}:", "{b}:"]
-    ],
-    mate: [
-      ["{a}:", "{b}:"],
-      ["{a}:", "{b}:"]
-    ]  
-  },
-  love: {
-    junior: [
-      ["{a}: 이거 마시고 해요", "{b}: …고마워. 진짜."],
-      ["{a}:", "{b}:"]
-    ],
-    senior: [
-      ["{a}:", "{b}:"],
-      ["{a}:", "{b}:"]
-    ],
-    mate: [
-      ["{a}:", "{b}:"],
-      ["{a}:", "{b}:"]
-    ]
-  },
-  
-  forbidden: {
-    junior: {
-      marriedA:[
-        ["{a}: 아내 분은요...?", "{b}: 굳이 얘기할 필요는 없는 것 같은데."],
-        ["{a}:", "{b}:"]
-      ],
-      marriedB:[
-        ["{a}:", "{b}:"],
-        ["{a}:", "{b}:"]
-
-      ]
+    comfort: { // 일반 호감/위로
+        junior: [
+            ["{a}: 선배님, 오늘 폼 좋으시던데요!", "{b}: 고맙다. 너도 열심히 해."],
+            ["{a}: 선배님, 식사 하셨어요?", "{b}: 아직. 같이 갈래?"],
+            ["{a}: 저 좀 도와주실 수 있나요?", "{b}: 그래, 무슨 일인데?"]
+        ],
+        senior: [
+            ["{a}: 어이, 요즘 표정이 왜 그래?", "{b}: 아, 그냥 좀 피곤해서요."],
+            ["{a}: 오늘 끝나고 한잔 할까?", "{b}: 좋습니다, 선배님!"],
+            ["{a}: 너무 무리하지 마라.", "{b}: 감사합니다."]
+        ],
+        mate: [
+            ["{a}: 야, 오늘 경기 봤냐?", "{b}: 어, 진짜 아깝더라."],
+            ["{a}: 배고프다. 뭐 먹지?", "{b}: 치킨이나 시키자."],
+            ["{a}: 우리 올해는 우승 할 수 있을까?", "{b}: 해야지, 무조건."]
+        ]
     },
-    senior: {
-      merridA:[
-        ["{a}:", "{b}:"],
-        ["{a}:", "{b}:"]
-      ],
-      merridB:[
-        ["{a}:", "{b}:"],
-        ["{a}:", "{b}:"]
-      ]
+    love: { // 연인 관계
+        junior: [ // a(후배) -> b(선배)
+            ["{a}: (귓속말) 선배, 보고 싶었어요.", "{b}: ...여기 경기장이다."],
+            ["{a}: 이거 마시고 해요.", "{b}: ...고마워. 진짜."],
+            ["{a}: 오늘 밤에 시간 되세요?", "{b}: 당연하지."]
+        ],
+        senior: [ // a(선배) -> b(후배)
+            ["{a}: 끝나고 기다려. 데려다줄게.", "{b}: 네, 알겠어요...!"],
+            ["{a}: 너 오늘 좀 귀엽다?", "{b}: 놀리지 마세요..."],
+            ["{a}: 아프지 마. 속상하니까.", "{b}: 선배님..."]
+        ],
+        mate: [ // 동기
+            ["{a}: 자기야, 힘내.", "{b}: 너 보니까 힘난다."],
+            ["{a}: 사랑해.", "{b}: 나도."],
+            ["{a}: 주말에 데이트 할까?", "{b}: 좋아. 어디 갈래?"]
+        ]
     },
-    mate: {
-      merridA:[
-        ["{a}:", "{b}:"],
-        ["{a}:", "{b}:"]
-      ],
-      merridB:[
-        ["{a}:", "{b}:"],
-        ["{a}:", "{b}:"]
-      ]
+    forbidden: { // 기혼자 포함 관계
+        junior: { // a(후배) -> b(선배)
+            marriedA: [ // a가 기혼
+                ["{a}: 아내한텐 비밀로 했어요.", "{b}: ...죄책감 안 들어?"],
+                ["{a}: 선배가 더 좋아요.", "{b}: 그만해. 돌아갈 곳이 있잖아."]
+            ],
+            marriedB: [ // b가 기혼
+                ["{a}: 형수님은요...?", "{b}: 굳이 얘기할 필요는 없는 것 같은데."],
+                ["{a}: 이혼하면 안 돼요?", "{b}: ...어린애 같은 소리 하지 마."]
+            ]
+        },
+        senior: { // a(선배) -> b(후배)
+            marriedA: [
+                ["{a}: 집 들어가기 싫다. 너랑 있고 싶어.", "{b}: ...사모님 기다리시잖아요."],
+                ["{a}: 널 조금만 더 일찍 만났다면...", "{b}: 그런 가정은 의미 없어요."]
+            ],
+            marriedB: [
+                ["{a}: 네 남편은 잘해주냐?", "{b}: ...그냥 그래요."],
+                ["{a}: 가끔은 네가 유부녀라는 걸 잊고 싶다.", "{b}: 선배님..."]
+            ]
+        },
+        mate: {
+            marriedA: [
+                ["{a}: 결혼 생활... 지겹다.", "{b}: 배부른 소리 하네."],
+                ["{a}: 너랑 결혼했어야 했는데.", "{b}: 술 취했냐?"]
+            ],
+            marriedB: [
+                ["{a}: 제수씨한테 안 미안하냐?", "{b}: ...시끄러."],
+                ["{a}: 너랑 있으면 숨통이 트여.", "{b}: 위험한 말 하지 마."]
+            ]
+        }
     }
-  },
-    
 };
 
 /* 전역 상태 */
@@ -118,7 +121,15 @@ const Utils = {
     sleep: ms => new Promise(r => setTimeout(r, ms)),
     chance: p => Math.random() < p,
     randomFrom: arr => arr[Math.floor(Math.random() * arr.length)],
-    
+
+    shuffle: (array) => {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+    },
+
     // 성격에 따른 보정값 반환
     getPersonalityBias: (personality) => {
         switch (personality) {
@@ -308,7 +319,7 @@ const GameLogic = {
 
 /* 로그 시스템 */
 const GameLogger = {
-    // 로그 데이터 추가 및 시각 큐 처리
+    // ... 기존 write, logLine은 동일 ...
     write: async (entry) => {
         state.gameLogs.push(entry);
         state.visualQueue.push(entry);
@@ -316,33 +327,55 @@ const GameLogger = {
     },
 
     logLine: async (prefix, text, style = "system", delay = 0.6) => {
-        await GameLogger.write({ day: state.currentDay, text: `${prefix} ${text}` });
+        // 텍스트 앞의 접두어(이모지) 처리
+        const content = prefix ? `${prefix} ${text}` : text;
+        await GameLogger.write({ day: state.currentDay, text: content });
         await Utils.sleep(Math.round(delay * 1000));
         DOM.logArea.scrollTop = DOM.logArea.scrollHeight;
     },
 
-    // 큐에 쌓인 로그를 화면에 하나씩 출력
     processQueue: async () => {
         if (state.visualProcessing) return;
         state.visualProcessing = true;
 
         const area = DOM.logArea;
-        while (state.visualQueue.length) {
-            const entry = state.visualQueue.shift();
-            
-            const visibleDay = state.showAllLogs ? null : (state.lastDay !== null ? state.lastDay : state.currentDay);
-            const shouldShow = state.showAllLogs || (entry.day === visibleDay || entry.day === state.currentDay);
+        try {
+            while (state.visualQueue.length) {
+                const entry = state.visualQueue.shift();
+                
+                // 보기 모드 체크
+                const visibleDay = state.showAllLogs ? null : (state.lastDay ?? state.currentDay);
+                const shouldShow = state.showAllLogs || (entry.day === visibleDay || entry.day === state.currentDay);
 
-            if (shouldShow && area) {
-                const div = document.createElement("div");
-                div.className = "log-entry";
-                div.textContent = `[DAY ${entry.day}] ${entry.text}`;
-                area.appendChild(div);
-                area.scrollTop = area.scrollHeight;
-                await Utils.sleep(CONSTANTS.VISUAL_STEP_MS);
+                if (shouldShow && area) {
+                    // 1. 날짜 헤더 확인
+                    // DOM의 마지막 day-divider를 확인하거나, state를 통해 추적
+                    const lastDivider = Array.from(area.querySelectorAll('.day-divider')).pop();
+                    const lastDayNum = lastDivider ? parseInt(lastDivider.dataset.day) : -1;
+
+                    if (lastDayNum !== entry.day) {
+                        const divDay = document.createElement("div");
+                        divDay.className = "day-divider";
+                        divDay.dataset.day = entry.day;
+                        divDay.innerHTML = `<span>DAY ${entry.day}</span>`;
+                        area.appendChild(divDay);
+                    }
+
+                    // 2. 로그 출력 (innerHTML 사용)
+                    const div = document.createElement("div");
+                    div.className = "log-entry";
+                    div.innerHTML = entry.text; // <br> 태그 해석
+                    area.appendChild(div);
+                    
+                    area.scrollTop = area.scrollHeight;
+                    await Utils.sleep(50); // 출력 속도
+                }
             }
+        } catch (e) {
+            console.error("Log Error:", e);
+        } finally {
+            state.visualProcessing = false;
         }
-        state.visualProcessing = false;
     }
 };
 
@@ -470,17 +503,30 @@ const UIManager = {
     // 게임 화면: 로그 전체보기
     renderLogs: () => {
         DOM.logArea.innerHTML = "";
-        // showAllLogs에 따라 필터링
-        const visibleDay = state.showAllLogs ? null : (state.lastDay ?? state.currentDay);
         
+        const visibleDay = state.showAllLogs ? null : (state.lastDay ?? state.currentDay);
+        let lastRenderedDay = -1; // 날짜 추적용
+
         state.gameLogs.forEach(entry => {
-            if (visibleDay === null || entry.day === visibleDay || entry.day === state.currentDay) {
-                const div = document.createElement("div");
-                div.className = "log-entry";
-                div.textContent = `[DAY ${entry.day}] ${entry.text}`;
-                DOM.logArea.appendChild(div);
+            // 필터링
+            if (visibleDay !== null && entry.day !== visibleDay && entry.day !== state.currentDay) return;
+
+            // 날짜 헤더 추가
+            if (lastRenderedDay !== entry.day) {
+                const divDay = document.createElement("div");
+                divDay.className = "day-divider";
+                divDay.innerHTML = `<span>DAY ${entry.day}</span>`;
+                DOM.logArea.appendChild(divDay);
+                lastRenderedDay = entry.day;
             }
+
+            // 로그 내용 추가
+            const div = document.createElement("div");
+            div.className = "log-entry";
+            div.innerHTML = entry.text; // 여기서 <br>이 줄바꿈으로 변환됨
+            DOM.logArea.appendChild(div);
         });
+        
         DOM.logArea.scrollTop = DOM.logArea.scrollHeight;
     },
 
@@ -636,7 +682,7 @@ const GameEvents = {
         if (isForbidden) await GameLogic.applyTension(player, target, 10);
         else if (relation.type === 'lover') await GameLogic.applyAffection(player, target, 5);
 
-        return null; 
+        return line; 
     },
 
     // SNS 이벤트
@@ -1021,47 +1067,71 @@ const GameEvents = {
 async function dayTick() {
     console.log(`=== DAY ${state.currentDay} START ===`);
     const day = state.currentDay;
+    
+    // 1. 일일 자연 변화 적용
+    state.characters.forEach(p => {
+        if(p.active) GameLogic.applyDailyDrift(p);
+    });
 
-    for (const player of state.characters) {
+    // 이번 턴에 발생할 모든 로그를 담을 배열
+    let dailyLogQueue = [];
+
+    // 실행 순서를 섞기 위해 캐릭터 목록 복사 후 셔플
+    const shuffledChars = Utils.shuffle([...state.characters]);
+
+    // 2. 소셜 이벤트 (대화) 수집
+    for (const player of shuffledChars) {
         if (!player.active) continue;
 
-        // 1. 개인별 일일 자연 변화 (한 번만 실행)
-        GameLogic.applyDailyDrift(player);
+        // 관계 루프도 섞어서 진행 (A가 항상 B한테 먼저 말 걸지 않게)
+        const relations = Object.entries(player.relations);
+        Utils.shuffle(relations);
 
-        // 2. 관계 상호작용
-        for (const [tid, relation] of Object.entries(player.relations)) {
+        for (const [tid, relation] of relations) {
             const target = state.characters.find(c => c.id === tid);
             if (!target) continue;
 
-            // 대화 이벤트 발생 (확률 40%)
+            // 대화 발생 확률 (40%)
             if (Utils.chance(0.40)) {
                 const talkLine = await GameEvents.trySocialEvent(player, target, relation);
                 if (talkLine) {
-                    await GameLogger.write({ day, text: talkLine });
+                    // 바로 출력하지 않고 큐에 담음
+                    dailyLogQueue.push({ type: 'social', text: talkLine });
                 }
             }
-
-            // 미세 감정 변화 (정수화)
+            
+            // 관계 자연 변화 (로그 없이 수치만 조용히 변경)
             const drift = Math.round(Math.random() * 2 - 1); 
             if(drift !== 0) {
                  relation.stats.affection = Utils.clamp(relation.stats.affection + drift, -50, 100);
             }
-            await Utils.sleep(CONSTANTS.TICK_RELATION_DELAY);
         }
+    }
 
-        // 3. 개인 이벤트 (SNS, 야구 이벤트 등)
+    // 3. 특수 이벤트 (SNS, 야구 등) 실행
+    // 먼저 소셜 로그들을 화면에 뿌림 (비동기 처리 맡김)
+    for (const log of dailyLogQueue) {
+        await GameLogger.write({ day, text: log.text });
+    }
+
+    // 그 다음 특수 이벤트 체크
+    for (const player of shuffledChars) {
+        if (!player.active) continue;
+        
+        // 확률을 조금 높여서 테스트 (기존 0.1 -> 0.3 등 조정 가능)
+        // 아래 이벤트들은 내부에서 UIManager.askChoice(대기)를 하므로 await 필수
         await GameEvents.eventConfessionMoment(player);
         await GameEvents.eventSNS(player);
         await GameEvents.eventCafe(player);
         await GameEvents.eventJealousyClash(player);
+        
+        // 야구 관련 이벤트 (포지션 체크는 내부에서 함)
         await GameEvents.eventHardHitBall(player);
         await GameEvents.eventCatcherSChoice(player);
         await GameEvents.eventOutfielderError(player);
         await GameEvents.eventInfielderError(player);
         await GameEvents.eventInfielderSChoice(player);
         await GameEvents.eventOutfielderSChoice(player);
-
-        await Utils.sleep(CONSTANTS.TICK_PLAYER_DELAY);
     }
     
     console.log(`=== DAY ${day} END ===`);

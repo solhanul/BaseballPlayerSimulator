@@ -394,6 +394,115 @@ button.btn-io:hover, .small-link:hover {
   overflow-y: auto;
 }
 
+/* 캐릭터 상세창 */
+/* 상태창 카드 스타일 */
+.status-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 12px;
+}
+
+.status-header {
+  border-bottom: 1px solid #f3f4f6;
+  padding-bottom: 8px;
+  margin-bottom: 10px;
+}
+
+.basic-stats {
+  font-size: 12px;
+  color: #666;
+}
+
+.rel-title {
+  font-weight: 600;
+  font-size: 13px;
+  margin-bottom: 8px;
+  color: #374151;
+}
+
+.rel-item {
+  background: #f9fafb;
+  padding: 8px;
+  border-radius: 6px;
+  margin-bottom: 5px;
+  font-size: 12px;
+}
+
+.rel-target {
+  font-weight: bold;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.rel-stats {
+  display: flex;
+  gap: 10px;
+  color: #4b5563;
+}
+
+/* 팝업(모달) 배경 */
+.modal-overlay {
+    position: fixed;
+    top: 0; 
+    left: 0;
+    width: 100%; 
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5); /* 반투명 검은 배경 */
+    z-index: 9999; /* 제일 위에 뜨게 */
+    display: none; /* 기본적으로 숨김 */
+    justify-content: center;
+    align-items: center;
+}
+
+/* 팝업 내용 박스 */
+.modal-content {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 400px;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+
+.modal-list {
+    margin: 15px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.modal-footer {
+    text-align: right;
+}
+
+/* 관계 아이템 스타일 */
+.rel-item {
+    background: #f8f9fa;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #eee;
+}
+
+.rel-stats-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 5px;
+    flex-wrap: wrap;
+}
+
+.stat-badge {
+    font-size: 11px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: #eef2ff;
+    color: #4f46e5;
+    font-weight: bold;
+}
+
 /* 반응형웹  */
 
 /* 기본: 탭 버튼 숨기기 */
@@ -404,6 +513,30 @@ button.btn-io:hover, .small-link:hover {
 /* 기본: 로그 상태창 좌우 동시 노출 */
 .content-box {
     display: flex !important; 
+}
+
+/* 관계 타입 태그 */
+.type-tag {
+    font-size: 10px;
+    padding: 1px 5px;
+    border-radius: 4px;
+    background: #eee;
+    color: #666;
+    margin-left: auto;
+}
+
+.type-tag.label-lover {
+    background: #ffe4e6;
+    color: #e11d48;
+    font-weight: bold;
+    border: 1px solid #fda4af;
+}
+
+/* 상태 카드 클릭 유도 스타일 */
+.status-card:hover {
+    border-color: #4a90e2;
+    background-color: #f0f7ff;
+    transition: 0.2s;
 }
 
 /* 모바일 */

@@ -640,7 +640,7 @@ const GameEvents = {
 
         if (!pool || pool.length === 0) return null;
 
-        const tpl = Utils.randomFrom(pool); // 수정 확인: Utils.randomFrom
+        const tpl = Utils.randomFrom(pool);
         if (!tpl) return null;
 
         const line = tpl.map(s => s.replace('{a}', player.name).replace('{b}', target.name)).join('<br>');
@@ -920,15 +920,13 @@ const GameEvents = {
         } catch (e) { console.error(e); }
     },
 
-    // 고백 이벤트 (수정됨: state.characters, Utils.randomFrom 적용)
+    // 고백 이벤트
     eventConfessionMoment: async (c) => {
-        // [수정] characters -> state.characters
         const candidates = state.characters.filter(target =>
             c.id !== target.id && (c.relations[target.id]?.stats.affection >= 60)
         );
         if (candidates.length === 0 || !Utils.chance(0.15)) return;
 
-        // [수정] randomFrom -> Utils.randomFrom
         const target = Utils.randomFrom(candidates);
 
         try {
@@ -950,30 +948,28 @@ const GameEvents = {
                 const targetAff = target.relations[c.id]?.stats.affection || 0;
 
                 if (targetAff >= 50 && !Utils.chance(0.5)) {
-                    await GameLogger.logLine("❤️", `[SUCCESS] ${target.name}이 고개를 끄덕였다`, "info", 1.0);
+                    await GameLogger.logLine("❤️", `[SUCCESS] ${target.name}이(가) 고개를 끄덕였다`, "info", 1.0);
                     await GameLogic.applyAffection(c, target, 30);
                     await GameLogic.applyAffection(target, c, 30);
                 } else {
-                    await GameLogger.logLine("💔", `[FAIL] ${target.name}은 조용히 거절했다`, "warning", 1.0);
+                    await GameLogger.logLine("💔", `[FAIL] ${target.name}은(는) 조용히 거절했다`, "warning", 1.0);
                     await GameLogic.applyAffection(c, target, -10);
                     await GameLogic.applyMental(c, -10);
                 }
             } else {
-                await GameLogger.logLine("...", `${c.name}은 말을 삼켰다`, "default", 0.5);
+                await GameLogger.logLine("...", `${c.name}은(는) 말을 삼켰다`, "default", 0.5);
                 await GameLogic.applyTension(c, target, 5);
             }
         } catch (e) { console.error(e); }
     },
 
-    // 카페 이벤트 (수정됨: state.characters, Utils.randomFrom 적용)
+    // 카페 이벤트 
     eventCafe: async (c) => {
-        // [수정] characters -> state.characters
         const candidates = state.characters.filter(target =>
             c.id !== target.id && (c.relations[target.id]?.stats.affection >= 0)
         );
         if (candidates.length === 0 || !Utils.chance(0.15)) return;
 
-        // [수정] randomFrom -> Utils.randomFrom
         const target = Utils.randomFrom(candidates);
 
         try {
@@ -992,23 +988,22 @@ const GameEvents = {
             await GameLogger.logLine("📝", `<span class="log-choice-record">선택: ${ans === 'propose' ? '카페에 가자' : '그만둔다'}</span>`, "desc");
 
             if (ans === "propose" && !Utils.chance(0.4)) {
-                await GameLogger.logLine("❤️", `${target.name}이 고개를 끄덕였다`, "info", 1.0);
+                await GameLogger.logLine("❤️", `${target.name}이(가) 고개를 끄덕였다`, "info", 1.0);
                 await GameLogic.applyAffection(c, target, 20);
                 await GameLogic.applyAffection(target, c, 20);
             } else if (ans === "propose") {
-                await GameLogger.logLine("💔", `${target.name}이 난처한 표정을 지었다`, "warning", 1.0);
+                await GameLogger.logLine("💔", `${target.name}이(가) 난처한 표정을 지었다`, "warning", 1.0);
                 await GameLogic.applyAffection(c, target, -5);
                 await GameLogic.applyMental(c, -5);
             } else {
-                await GameLogger.logLine("...", `${c.name}은 아무 말도 하지 않았다`, "default", 0.5);
+                await GameLogger.logLine("...", `${c.name}은(는) 아무 말도 하지 않았다`, "default", 0.5);
                 await GameLogic.applyTension(c, target, 5);
             }
         } catch (e) { console.error(e); }
     },
 
-    // 질투 이벤트 (수정됨: state.characters 적용)
+    // 질투 이벤트
     eventJealousyClash: async (c) => {
-        // [수정] characters -> state.characters
         const jealousChar = state.characters.find(other =>
             other.id !== c.id &&
             (other.relations[c.id]?.type === "lover" ||
@@ -1017,7 +1012,7 @@ const GameEvents = {
         if (!jealousChar || !Utils.chance(0.2)) return;
 
         try {
-            await GameLogger.logLine("👁️",`${jealousChar.name}이 차가운 눈빛으로 ${c.name}을 바라본다`,"warning",0.7);
+            await GameLogger.logLine("👁️",`${jealousChar.name}이(가) 차가운 눈빛으로 ${c.name}을 바라본다`,"warning",0.7);
 
             const ans = await UIManager.askChoice({
                 title: "[개인 이벤트: 질투]",
@@ -1091,7 +1086,6 @@ async function dayTick() {
     }
 
     // 3. 특수 이벤트 (SNS, 야구 등) 실행
-    // 먼저 소셜 로그들을 화면에 뿌림 (비동기 처리 맡김)
     for (const log of dailyLogQueue) {
         await GameLogger.write({ day, text: log.text });
     }
@@ -1100,8 +1094,6 @@ async function dayTick() {
     for (const player of shuffledChars) {
         if (!player.active) continue;
         
-        // 확률을 조금 높여서 테스트 (기존 0.1 -> 0.3 등 조정 가능)
-        // 아래 이벤트들은 내부에서 UIManager.askChoice(대기)를 하므로 await 필수
         await GameEvents.eventConfessionMoment(player);
         await GameEvents.eventSNS(player);
         await GameEvents.eventCafe(player);
